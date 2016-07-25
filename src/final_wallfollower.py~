@@ -40,7 +40,11 @@ class wall_follow:
         
         
     def laser_callback(self, msg):
+        self.follow_left = True
         self.simulate_callback(msg, self.publisher)
+
+        self.follow_left = False
+        self.simulate_callback(msg, self.pub_left)
         
     def simulate_callback(self, msg, publisher):
         actual_dist = self.calc_actual_dist(msg.ranges)
