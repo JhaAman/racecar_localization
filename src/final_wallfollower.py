@@ -5,27 +5,27 @@ from sensor_msgs.msg import LaserScan
 import std_msgs
 import math
 
-PID_KP_LEFT = 0.7
-PID_KP_RIGHT = 1.3
+PID_KP_LEFT =0.5
+PID_KP_RIGHT = 0.8
 
-PID_KD = 0
+PID_KD = .05
 
 class wall_follow:
     def __init__(self):
         rospy.Subscriber('/scan', LaserScan, self.laser_callback, queue_size=10)
         self.publisher = rospy.Publisher('/vesc/ackermann_cmd_mux/input/navigation', AckermannDriveStamped, queue_size=10)
 
-
+	self.drive_msg = AckermannDriveStamped()
         self.last_error = None
 
-        self.follow_left = True
+        self.follow_left = False
 
-        self.desired = 0.45
-    
+        self.desired = 0.4
+    	self.publish()
     def calc_actual_dist(self, ranges):
         if self.follow_left:
             end_index = 900
-            start_index = 850
+            start_index= 850
         else: # follow right
             end_index = 1081 - 850
             start_index = 1081 - 900
@@ -72,13 +72,16 @@ class wall_follow:
 
         # rospy.loginfo("steering is %f", steer_output)
     
-        drive_msg = AckermannDriveStamped()
-        drive_msg.drive.speed = 2 # max speed
-        drive_msg.drive.steering_angle = steer_output
-        publisher.publish(drive_msg)
-
+        self.drive_msg = AckermannDriveStamped()
+        self.drive_msg.drive.speed = 1 # max speed
+        self.drive_msg.drive.steering_angle = steer_output
+        
+	
         self.last_error = error
-
+    def publish(self):
+	while not rospy.is_shutdown():
+		self.publisher.publish(self.drive_msg)
+		rospy.Rate(8).sleep()
 if __name__ == '__main__':
     rospy.init_node('wall_follower')
     node = wall_follow()
