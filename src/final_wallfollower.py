@@ -5,7 +5,7 @@ from sensor_msgs.msg import LaserScan
 import std_msgs
 import math
 
-PID_KP_LEFT = 0.9
+PID_KP_LEFT = 0.7
 PID_KP_RIGHT = 1.3
 
 PID_KD = 0
