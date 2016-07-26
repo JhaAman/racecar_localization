@@ -18,7 +18,7 @@ class twoWallFollow:
         self.publish()
 
     def laser_callback(self, msg):
-        averaged = [sum(msg.ranges[i:i+40])/40 for i in range(160, 920, 40)]
+        averaged = [sum(msg.ranges[i:i+40])/40 for i in range(120, 960, 40)]
         furthest = max(enumerate(averaged),  key=lambda x: x[1])[0]
         targetPoint = furthest * 40 + 20
         
