@@ -7,7 +7,7 @@ import std_msgs
 import math
 
 SLICE_LEN = 60
-DIST = 1.0
+DIST = 0.7
 class objectAvoid:
     def __init__(self):
         rospy.Subscriber('/scan', LaserScan, self.laser_callback, queue_size=10)
