@@ -15,14 +15,14 @@ SLICE_LEN = 50
 class twoWallFollow:
     def __init__(self):
         rospy.Subscriber('/scan', LaserScan, self.laser_callback, queue_size=10)
-        self.publisher = rospy.Publisher('/vesc/ackermann_cmd_mux/input/navigation', AckermannDriveStamped, queue_size=10)
+        self.publisher = rospy.Publisher('/drive', AckermannDriveStamped, queue_size=10)
         self.rangeStarted = False
         self.drive_msg = AckermannDriveStamped()
         self.pid = PIDController(rospy.Time.now(),  PID_KP,PID_KI,PID_KD)
         self.publish()
 
     def laser_callback(self, msg):
-        ranges = map(lambda x: int(x>1.2),  msg.ranges)
+        ranges = map(lambda x: int(x>1.5),  msg.ranges)
 	ranges= ranges[180:901]
         self.rangeStarted = False
         #print ranges
@@ -57,16 +57,15 @@ class twoWallFollow:
                     self.rangeStarted = False
                 else:
                     continue
-        targetPoint = (maxEnd + maxStart)/2 + 180
+        targetPoint = (maxEnd + maxStart)/2 + 180 if maxEnd != 0 else 540 
         print targetPoint
-	print maxEnd
-	print maxStart
+	print maxLen
         error = (targetPoint * msg.angle_increment) + msg.angle_min
 	
         steer_angle = self.pid.update(error,  rospy.Time.now())
 	print steer_angle
         self.drive_msg = AckermannDriveStamped()
-        self.drive_msg.drive.speed = 2.0
+        self.drive_msg.drive.speed = 2.0 if maxLen >= 115 else -2.0
         self.drive_msg.drive.steering_angle = steer_angle
 
     def publish(self):
