@@ -7,10 +7,10 @@ import std_msgs
 import math
 from PID import PIDController
 
-PID_KP = 1
+PID_KP = 0.9
 PID_KP_countclock = 0.0035
 PID_KI = 0.0
-PID_KD = 0.0
+PID_KD = 0.01
 SLICE_LEN = 50
 class twoWallFollow:
     def __init__(self):
@@ -22,7 +22,7 @@ class twoWallFollow:
         self.publish()
 
     def laser_callback(self, msg):
-        ranges = map(lambda x: int(x>1),  msg.ranges)
+        ranges = map(lambda x: int(x>1.2),  msg.ranges)
 	ranges= ranges[180:901]
         self.rangeStarted = False
         #print ranges
