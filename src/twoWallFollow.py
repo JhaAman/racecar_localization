@@ -25,12 +25,12 @@ class twoWallFollow:
         ranges = map(lambda x: int(x>1),  msg.ranges)
         self.rangeStarted = False
         print ranges
-        currStart = None
-        currEnd = None
-        currLen = None
-        maxLen = None
-        maxEnd = None
-        maxStart = None
+        currStart = 0
+        currEnd = 0
+        currLen = 0
+        maxLen = 0
+        maxEnd = 0
+        maxStart = 0
         for i in range(len(ranges)):
             if ranges[i]:
                 #print "empty"
@@ -47,6 +47,7 @@ class twoWallFollow:
                     currEnd = i
                     #print currEnd
                     currLen = currEnd - currStart
+                    print currLen
                     if currLen > maxLen:
                         print "this"
                         maxLen = currLen
@@ -56,11 +57,11 @@ class twoWallFollow:
                 else:
                     continue
         targetPoint = (maxEnd - maxStart)/2
-        print targetPoint
+        #print targetPoint
         error = (targetPoint - 540)/4
         steer_angle = self.pid.update(error,  rospy.Time.now())
         self.drive_msg = AckermannDriveStamped()
-        self.drive_msg.drive.speed = 2.0
+        self.drive_msg.drive.speed = 1.0
         self.drive_msg.drive.steering_angle = steer_angle
 
     def publish(self):
