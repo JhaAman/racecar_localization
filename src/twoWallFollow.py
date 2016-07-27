@@ -6,7 +6,7 @@ from sensor_msgs.msg import LaserScan
 import std_msgs
 import math
 from PID import PIDController
-#MEMES BRO
+
 PID_KP = 0.0045
 PID_KP_countclock = 0.0035
 PID_KI = 0.0
@@ -14,41 +14,47 @@ PID_KD = 0.0
 SLICE_LEN = 50
 class twoWallFollow:
     def __init__(self):
-        rospy.Subscriber('/scan', LaserScan, self.laser_callback, queue_size=10)
-        self.publisher = rospy.Publisher('/vesc/ackermann_cmd_mux/input/navigation', AckermannDriveStamped, queue_size=10)
+        rospy.Subscriber('racecar/laser/scan', LaserScan, self.laser_callback, queue_size=10)
+        self.publisher = rospy.Publisher('/racecar/ackermann_cmd_mux/input/navigation', AckermannDriveStamped, queue_size=10)
+        self.rangeStarted = False
         self.drive_msg = AckermannDriveStamped()
         self.pid = PIDController(rospy.Time.now(),  PID_KP,PID_KI,PID_KD)
         self.publish()
 
     def laser_callback(self, msg):
-	ranges = [1 if msg.ranges[i] > 1 else 0 for i in range(1081)]
-	rangeStarted = False
-	currStart = None
-	currEnd = None
-	currLen = None
-	maxLen = None
-	maxEnd = None
-	maxStart = None
-	for i in range(len(ranges)):
-	    if ranges[i]:
-		if rangeStarted:
-			pass
-		else:
-			currStart = i
-			rangeStarted = True
-	    else:
-		if rangeStarted:
-			currEnd = i
-			currLen = currEnd - currStart
-			if currLen > maxLen:
-				maxLen = currLen
-				maxStart = currStart
-				maxEnd = currEnd
-			rangeStarted = False
-			
-		 	
-	
-
+        ranges = map(lambda x: int(x>1),  msg.ranges)
+        self.rangeStarted = False
+        print ranges
+        currStart = None
+        currEnd = None
+        currLen = None
+        maxLen = None
+        maxEnd = None
+        maxStart = None
+        for i in range(len(ranges)):
+            if ranges[i]:
+                #print "empty"
+                if self.rangeStarted:
+                    pass
+                else:
+                    currStart = i
+                    #print currStart
+                    #print "started Range at" + str(currStart)
+                    self.rangeStarted = True
+            else:
+                #print self.rangeStarted
+                if self.rangeStarted:
+                    currEnd = i
+                    #print currEnd
+                    currLen = currEnd - currStart
+                    if currLen > maxLen:
+                        print "this"
+                        maxLen = currLen
+                        maxStart = currStart
+                        maxEnd = currEnd
+                    self.rangeStarted = False
+                else:
+                    continue
         targetPoint = (maxEnd - maxStart)/2
         print targetPoint
         error = (targetPoint - 540)/4
