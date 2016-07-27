@@ -7,15 +7,15 @@ import std_msgs
 import math
 from PID import PIDController
 
-PID_KP = 0.0045
+PID_KP = 1
 PID_KP_countclock = 0.0035
 PID_KI = 0.0
 PID_KD = 0.0
 SLICE_LEN = 50
 class twoWallFollow:
     def __init__(self):
-        rospy.Subscriber('racecar/laser/scan', LaserScan, self.laser_callback, queue_size=10)
-        self.publisher = rospy.Publisher('/racecar/ackermann_cmd_mux/input/navigation', AckermannDriveStamped, queue_size=10)
+        rospy.Subscriber('/scan', LaserScan, self.laser_callback, queue_size=10)
+        self.publisher = rospy.Publisher('/vesc/ackermann_cmd_mux/input/navigation', AckermannDriveStamped, queue_size=10)
         self.rangeStarted = False
         self.drive_msg = AckermannDriveStamped()
         self.pid = PIDController(rospy.Time.now(),  PID_KP,PID_KI,PID_KD)
@@ -23,8 +23,9 @@ class twoWallFollow:
 
     def laser_callback(self, msg):
         ranges = map(lambda x: int(x>1),  msg.ranges)
+	ranges= ranges[180:901]
         self.rangeStarted = False
-        print ranges
+        #print ranges
         currStart = 0
         currEnd = 0
         currLen = 0
@@ -47,7 +48,7 @@ class twoWallFollow:
                     currEnd = i
                     #print currEnd
                     currLen = currEnd - currStart
-                    print currLen
+                    #print currLen
                     if currLen > maxLen:
                         print "this"
                         maxLen = currLen
@@ -56,12 +57,16 @@ class twoWallFollow:
                     self.rangeStarted = False
                 else:
                     continue
-        targetPoint = (maxEnd - maxStart)/2
-        #print targetPoint
-        error = (targetPoint - 540)/4
+        targetPoint = (maxEnd + maxStart)/2 + 180
+        print targetPoint
+	print maxEnd
+	print maxStart
+        error = (targetPoint * msg.angle_increment) + msg.angle_min
+	
         steer_angle = self.pid.update(error,  rospy.Time.now())
+	print steer_angle
         self.drive_msg = AckermannDriveStamped()
-        self.drive_msg.drive.speed = 1.0
+        self.drive_msg.drive.speed = 2.0
         self.drive_msg.drive.steering_angle = steer_angle
 
     def publish(self):
