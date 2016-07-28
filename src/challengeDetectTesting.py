@@ -2,7 +2,7 @@
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
-
+import rospy
 from sensor_msgs.msg import Image
 from std_msgs.msg import String
 from cv_bridge import CvBridge,  CvBridgeError
@@ -13,9 +13,6 @@ class challengeDetect:
     def __init__(self):
         self.node_name = "Challenge Tracker"
         self.thread_lock = threading.Lock()
-        
-        self.sub_image = rospy.Subscriber("/camera/rgb/image_rect_color",\
-                Image, self.cbImage, queue_size=1)
         self.pub_image = rospy.Publisher("~echo_image",\
                 Image, queue_size=1)
         self.pub_notification = rospy.Publisher("/exploring_challenge", String, queue_size=10)
@@ -23,27 +20,31 @@ class challengeDetect:
 
         self.image_count = 0
 
-        self.debugging = debugging
+        self.debugging = False
 
         self.bridge = CvBridge()
 
-        self.image0 = cv2.imread('img/image00.jpg', 0) # sertac
-        self.image1 = cv2.imread('img/image01.png', 0) # car
-        self.image2 = cv2.imread('img/image02.jpg', 0) # ari
-        self.image3 = cv2.imread('img/image03.jpg', 0) # cat
-        self.images = [self.image0, self.image1, self.image2, self.image3]
+        self.image0 = cv2.imread('image00.jpg', 0) # sertac
+        #self.image1 = cv2.imread('image01.png', 0) # car
+        #self.image2 = cv2.imread('image02.jpg', 0) # ari
+        #self.image3 = cv2.imread('image03.jpg', 0) # cat
+        #self.images = [self.image0, self.image1, self.image2, self.image3]
+        
+        self.testing = cv2.imread('image00.jpg', 0) # sertac
+        #print self.testing
+        self.cbImage(self.testing)
         rospy.loginfo("[%s] Initialized." %(self.node_name))
 
-    def cbImage(self,image_msg):
-        thread = threading.Thread(target=self.processImage,args=(image_msg,))
+    def cbImage(self,image_cv):
+        thread = threading.Thread(target=self.processImage,args=(image_cv,))
         thread.setDaemon(True)
         thread.start()
 
 
-    def processImage(self, image_msg):
+    def processImage(self, image_cv):
             if not self.thread_lock.acquire(False):
                 return
-            image_cv = self.bridge.imgmsg_to_cv2(image_msg)
+            #image_cv = self.bridge.imgmsg_to_cv2(image_msg)
     
             self.detection(image_cv)
             
@@ -57,15 +58,23 @@ class challengeDetect:
     
     
     def detection(self,  image_cv):
-        for i in self.images:
             image_cv_ = image_cv.copy()
-            result = cv2.matchTemplate(image_cv, i, cv2.TM_CCOEFF)
+            result = cv2.matchTemplate(image_cv, self.image0, cv2.TM_CCOEFF)
             min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-            top_left = max_loc
-            w, h = i.shape[::-1]
+            top_left = min_loc
+            w, h = self.image0.shape[::-1]
             bottom_right = (top_left[0] + w, top_left[1] + h)
-            
-            cv2.rectangle(image_cv_,top_left, bottom_right, 255, 2)
-            cv2.imshow("found", image_cv_)
+            print top_left
+            print bottom_right
+            plt.imshow(image_cv_)
+            plt.show()
+            cv2.rectangle(image_cv_,(0, 0),(200, 200),  bottom_right, 2, 2)
+            plt.subplot(121),plt.imshow(image_cv_,cmap = 'gray')
+            plt.show()
 
+            print "hi"
 
+if __name__ == "__main__":
+    rospy.init_node("ChallengeDetectTest")
+    e = challengeDetect()
+    rospy.spin()
