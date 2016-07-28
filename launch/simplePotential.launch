@@ -1,0 +1,4 @@
+<launch>
+	<node type="simplePotential.py" name="simplePotential" pkg="racecar_localization"/>
+	<node type="safety_mech.py" name="safetyMech" pkg="racecar_localization"/>
+</launch>
