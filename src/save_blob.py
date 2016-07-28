@@ -2,6 +2,7 @@
 import cv2
 import numpy as np
 import rospy
+import os
 
 from sensor_msgs.msg import Image
 from std_msgs.msg import Int32MultiArray, String
@@ -31,7 +32,13 @@ class ColorTracker:
         self.bridge = CvBridge()
 
         rospy.loginfo("[%s] Initialized." %(self.node_name))
-        #mkdir("~/challenge_photos")
+        
+        self.dirname = '/home/racecar/challenge_photos/'
+        if not os.path.exists(self.dirname):
+            os.makedirs(self.dirname)
+            print "wrote"
+        else:
+            print "whyyyyy"
 
     def cbImage(self,image_msg):
         thread = threading.Thread(target=self.processImage,args=(image_msg,))
@@ -111,7 +118,8 @@ class ColorTracker:
         self.notification = "I see "+color
         #self.photo_iter = 0
         #self.photo_timer = rospy.Timer(rospy.Duration(0.5), self.saveImage(img))
-        self.saveImage(img)
+        now = rospy.Time.now()
+        self.saveImage(img, now)
 
         if self.debugging:
             cv2.circle(img, (cx, cy), 10, (255, 255, 255), -1)
@@ -120,15 +128,14 @@ class ColorTracker:
 
         return (cx, cy, approx_area)
 
-    def saveImage(self, img):
+    def saveImage(self, img, now):
         #self.photo_iter += 1
         #if self.photo_iter > 5:
-
-        #NEED TO FIX PATHING
-        path = str(self.image_count)+".png"
-        print path
-        cv2.imwrite(path, img)
-        self.image_count += 1
+        while rospy.Time.now() - now < rospy.Duration(3): 
+            path = str(self.image_count)+".png"
+            print path
+            cv2.imwrite(os.path.join(self.dirname, path), img)
+            self.image_count += 1
         #self.photo_timer.shutdown()
         
 
