@@ -9,7 +9,7 @@ import numpy as np
 class simplePotential:
     def __init__(self):
         rospy.Subscriber('/scan', LaserScan, self.scan_callback, queue_size=10)
-        self.publisher = rospy.Publisher('/drive', AckermannDriveStamped, queue_size=10)
+        self.publisher = rospy.Publisher('/vesc/ackermann_cmd_mux/input/navigation', AckermannDriveStamped, queue_size=10)
         self.drive_msg = AckermannDriveStamped()
         self.charge_laser_particle = 0.005
         self.charge_forward_boost = 5
