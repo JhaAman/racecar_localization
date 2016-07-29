@@ -15,7 +15,7 @@ SLICE_LEN = 50
 class twoWallFollow:
     def __init__(self):
         rospy.Subscriber('/scan', LaserScan, self.laser_callback, queue_size=10)
-        self.publisher = rospy.Publisher('/drive', AckermannDriveStamped, queue_size=10)
+        self.publisher = rospy.Publisher('/vesc/ackermann_cmd_mux/input/navigation', AckermannDriveStamped, queue_size=10)
         self.rangeStarted = False
         self.drive_msg = AckermannDriveStamped()
         self.pid = PIDController(rospy.Time.now(),  PID_KP,PID_KI,PID_KD)

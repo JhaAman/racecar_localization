@@ -11,9 +11,14 @@ class simplePotential:
         rospy.Subscriber('/scan', LaserScan, self.scan_callback, queue_size=10)
         self.publisher = rospy.Publisher('/vesc/ackermann_cmd_mux/input/navigation', AckermannDriveStamped, queue_size=10)
         self.drive_msg = AckermannDriveStamped()
-        self.charge_laser_particle = 0.005
-        self.charge_forward_boost = 5
-        self.publish()
+        self.charge_laser_particle = 0.1
+        self.charge_forward_boost = 30.0
+	self.boost_distance = 1.0
+	self.p_speed = 0.02
+	self.p_steering = 1.0
+	#self.min_speed = 1.0
+	#self.max_steering_deflection = 0.4
+#        self.publish()
     
     def scan_callback(self, msg):
         scanRadAngles = (msg.angle_increment * np.arange(1081,dtype = float) + msg.angle_min)
@@ -24,7 +29,7 @@ class simplePotential:
         scanXComponent = (self.charge_laser_particle * scanXUnitVectors) / np.square(msg.ranges)
         scanYComponent = (self.charge_laser_particle * scanYUnitVectors) / np.square(msg.ranges)
     
-        kickXComponent = np.ones(1) * self.charge_forward_boost
+        kickXComponent = np.ones(1) * self.charge_forward_boost / self.boost_distance ** 2
         kickYComponent = np.zeros(1)
     	#print kickYComponent
         totalXComponent = np.sum(scanXComponent) + kickXComponent
@@ -38,15 +43,13 @@ class simplePotential:
     
         self.pub_goal.publish(visualizer_msg)"""
         self.drive_msg = AckermannDriveStamped()
-        self.drive_msg.drive.speed = 0.2* np.sqrt((totalXComponent)*(totalXComponent)+(totalYComponent)*(totalYComponent)) * np.sign(totalXComponent)
-        self.drive_msg.drive.steering_angle = math.atan2(totalYComponent, totalXComponent) * np.sign(totalXComponent)
+	
+        self.drive_msg.drive.speed =  self.p_speed* np.sqrt((totalXComponent)*(totalXComponent)+(totalYComponent)*(totalYComponent)) * np.sign(totalXComponent)  
+        self.drive_msg.drive.steering_angle =math.atan2(totalYComponent, totalXComponent) * np.sign(totalXComponent)
+	self.publisher.publish(self.drive_msg)
         #print self.drive_msg.drive.steering_angle
 	print self.drive_msg.drive.speed
-    
-    def publish(self):
-        while not rospy.is_shutdown():
-            self.publisher.publish(self.drive_msg)
-            rospy.Rate(8).sleep()
+
 if __name__ == "__main__":
     rospy.init_node("TwoWallFollow")
     e = simplePotential()

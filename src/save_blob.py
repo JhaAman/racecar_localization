@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import rospy
 import os
+import shutil
 
 from sensor_msgs.msg import Image
 from std_msgs.msg import Int32MultiArray, String
@@ -34,11 +35,15 @@ class ColorTracker:
         rospy.loginfo("[%s] Initialized." %(self.node_name))
         
         self.dirname = '/home/racecar/challenge_photos/'
-        if not os.path.exists(self.dirname):
-            os.makedirs(self.dirname)
-            print "wrote"
-        else:
-            print "whyyyyy"
+        
+	self.lock = threading.Lock()
+
+	if os.path.exists(self.dirname):
+		shutil.rmtree('/home/racecar/challenge_photos/')      
+		print "folder removed"      
+	os.makedirs(self.dirname)
+        print "new folder created"
+        
 
     def cbImage(self,image_msg):
         thread = threading.Thread(target=self.processImage,args=(image_msg,))
@@ -47,7 +52,7 @@ class ColorTracker:
 
     def detection(self, img):
 
-        bounds = [["green", [54, 30, 60], [72, 255, 255]], ["red", [0, 180, 150], [15, 255, 255]], ["blue", [200, 50, 45], [210, 90, 90]], ["yellow", [25, 35, 140], [40, 255, 255]], ["racecar", [0, 0, 0], [0, 0, 0]], ["ari", [0, 0, 0], [0, 0, 0]], ["professor karaman", [0, 0, 0], [0, 0, 0]], ["cat", [0, 0, 0], [0, 0, 0]]]
+        bounds = [["green", [50, 100, 100], [77, 255, 255]], ["red", [0, 130, 130], [10, 255, 255]], ["red", [170, 130, 130], [180,255,255]], ["blue", [100, 60, 80], [130, 255, 255]], ["yellow", [14, 100, 136], [29, 255, 255]], ["racecar", [0, 0, 0], [0, 0, 0]], ["ari", [0, 0, 0], [0, 0, 0]], ["professor karaman", [0, 0, 0], [0, 0, 0]], ["cat", [0, 0, 0], [0, 0, 0]]]
         
         for i in bounds:
             lower = np.array(i[1])
@@ -95,7 +100,7 @@ class ColorTracker:
         c = sorted_contours[0]
 
         area = cv2.contourArea(c)
-        if area < 400: # minimum area threshold
+        if area < 1000: # minimum area threshold
             return None
 
         perim = cv2.arcLength(c, True) # perimeter
@@ -119,7 +124,8 @@ class ColorTracker:
         #self.photo_iter = 0
         #self.photo_timer = rospy.Timer(rospy.Duration(0.5), self.saveImage(img))
         now = rospy.Time.now()
-        self.saveImage(img, now)
+	if self.lock.acquire(False):
+            self.saveImage(img, now)
 
         if self.debugging:
             cv2.circle(img, (cx, cy), 10, (255, 255, 255), -1)
@@ -131,11 +137,17 @@ class ColorTracker:
     def saveImage(self, img, now):
         #self.photo_iter += 1
         #if self.photo_iter > 5:
-        while rospy.Time.now() - now < rospy.Duration(3): 
-            path = str(self.image_count)+".png"
-            print path
-            cv2.imwrite(os.path.join(self.dirname, path), img)
-            self.image_count += 1
+        # if rospy.Time.now() - now < rospy.Duration(3): 
+        path = str(self.image_count)+".png"
+        print path
+	
+        cv2.imwrite(os.path.join(self.dirname, path), img)
+        self.image_count += 1
+	rospy.sleep(1)
+	self.lock.release()
+	# create a ROS timer for the amount of time which has a cbfunc
+	# in that cbfunc release the lock
+	   
         #self.photo_timer.shutdown()
         
 
