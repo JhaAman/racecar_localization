@@ -25,7 +25,7 @@ class PotentialField:
         self.charge_laser_particle = 0.07
         self.charge_forward_boost = 25.0
         self.boost_distance = 0.5
-        self.p_speed = 0.01       
+        self.p_speed = 0.05       
         self.p_steering = 1.0
 
         # subscribe to laserscans. Force output message data to be in numpy arrays.
@@ -39,7 +39,7 @@ class PotentialField:
         # Debug
         #print("Starting increment {} increment {}".format(msg.angle_min, msg.angle_increment))
         msg.ranges = msg.ranges[180:901]
-        # Create potential gradients for all laser scan particles
+        # Create potential gradients for middle 180 degrees of laser scan particles
         scan_rad_angles = ( (msg.angle_increment * np.arange(1081, dtype=float)) + msg.angle_min )
         scan_rad_angles = scan_rad_angles[180:901]
 
@@ -74,7 +74,7 @@ class PotentialField:
         # Publish the command
         self.pub_nav.publish(command_msg)
     def kickOut(self, speed):
-	self.speedHist = (self.speedHist * .7) + (abs(speed) * .3)
+	self.speedHist = (self.speedHist * .75) + (abs(speed) * .25)
 	print self.speedHist
 	if self.speedHist < 0.2:
 		return -1.0
